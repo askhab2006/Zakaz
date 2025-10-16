@@ -6,6 +6,7 @@ from config import ADMIN_ID
 from database.db import async_session
 from database.models import Product, ProductPhoto
 
+
 router = Router()
 
 class EditProduct(StatesGroup):
@@ -14,8 +15,8 @@ class EditProduct(StatesGroup):
     product_id = State()
 
 @router.message(F.text == "/products")
-async def list_products(message: types.Message):
-    if message.from_user.id != ADMIN_ID:
+async def list_products(message, user):
+    if user.id != ADMIN_ID:
         return await message.answer("⛔ Нет доступа.")
     
     async with async_session() as session:
@@ -29,7 +30,7 @@ async def list_products(message: types.Message):
     for row in products:
         p = row._mapping
 
-        # Получаем фото товара
+        
         photos_result = await session.execute(
             ProductPhoto.__table__.select().where(ProductPhoto.product_id == p["id"])
         )
@@ -43,7 +44,6 @@ async def list_products(message: types.Message):
         caption = (
             f"<b>{p['name']}</b>\n\n"
             f"Категория: {p['category']} | Подкатегория: {p['subcategory']}\n"
-            f"Цена: {p['price']}\n"
             f"Страна: {p['country']}\n"
             f"Размер: {p['size']}"
         )
@@ -72,7 +72,6 @@ async def choose_field(callback: types.CallbackQuery, state: FSMContext):
     
     kb = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="📝 Название", callback_data="field_name")],
-        [InlineKeyboardButton(text="💰 Цена", callback_data="field_price")],
         [InlineKeyboardButton(text="📏 Размер", callback_data="field_size")],
         [InlineKeyboardButton(text="🌍 Страна", callback_data="field_country")],
         [InlineKeyboardButton(text="🖼 Фото", callback_data="field_photo")],

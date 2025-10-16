@@ -1,5 +1,4 @@
 from aiogram import Router, types
-from aiogram.types import Message
 from aiogram.filters import Command
 from keyboards.main_menu import main_menu_kb
 

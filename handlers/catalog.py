@@ -9,6 +9,7 @@ from database.models import Product, ProductPhoto
 router = Router()
 
 
+
 @router.callback_query(F.data == "cat_sleep")
 async def show_sleep_menu(callback: CallbackQuery):
     await callback.message.edit_text(
@@ -53,47 +54,63 @@ async def back_to_main(callback: CallbackQuery):
                 reply_markup=main_menu_kb()
             )
         else:
+            await callback.message.delete()
             await callback.message.answer(
                 "🏠 Главное меню:",
                 reply_markup=main_menu_kb()
             )
-    except:
+    except Exception as e:
         await callback.message.answer(
             "🏠 Главное меню:",
             reply_markup=main_menu_kb()
         )
+        print(f"⚠️ Ошибка при возврате в главное меню: {e}")
+
+    await callback.answer()
+@router.callback_query(F.data == "cat_about")
+async def show_about(callback: CallbackQuery):
+    await callback.message.edit_text(
+        "ℹ️ О компании / Контакты<\n\n"
+        "Мы специализируемся на продаже качественной мебели из России и Турции. "
+        "Наш ассортимент включает спальную мебель, кровати, кухонную мебель, мягкую мебель, "
+        "столы и стулья, тумбы и комоды, матрасы и шкафы.\n\n"
+        "📞 Контакты:\n"
+        "Телефон: +7 (999) 123-45-67\n"
+        "Email:",
+        reply_markup=main_menu_kb())
     await callback.answer()
 
 
 CATEGORY_MAP = {
-    "sleep_ru": ("Спальная мебель", "Российская"),
-    "sleep_tr": ("Спальная мебель", "Турецкая"),
-    "beds_ru": ("Кровати", "Российская"),
-    "beds_tr": ("Кровати", "Турецкая"),
+    "sleep_ru": ("Спальная мебель", "Россия"),
+    "sleep_tr": ("Спальная мебель", "Турция"),
+    "beds_ru": ("Кровати", "Россия"),
+    "beds_tr": ("Кровати", "Турция"),
     "kitchen_straight": ("Кухонная мебель", "Прямая"),
     "kitchen_corner": ("Кухонная мебель", "Угловая"),
-    "soft_ru": ("Мягкая мебель", "Российская"),
-    "soft_tr": ("Мягкая мебель", "Турецкая"),
-    "tables_chairs_ru": ("Столы и стулья", "Российская"),
-    "tables_chairs_tr": ("Столы и стулья", "Турецкая"),
-    "chests_ru": ("Тумбы и комоды", "Российская"),
-    "chests_tr": ("Тумбы и комоды", "Турецкая"),
-    "cat_commodes": ("Комоды", "Все"),
-    "cat_mattresses": ("Матрасы", "Все"),
+    "soft_ru": ("Мягкая мебель", "Россия"),
+    "soft_tr": ("Мягкая мебель", "Турция"),
+    "tables_chairs_ru": ("Столы и стулья", "Россия"),
+    "tables_chairs_tr": ("Столы и стулья", "Турция"),
     "cat_wardrobes": ("Шкафы", "Все"),
+    "cat_mattresses": ("Матрасы", "Все"),
+    "cat_commodes": ("Тумбы и комоды", "Все"),
 }
+
+
 
 @router.callback_query(F.data.in_(CATEGORY_MAP.keys()))
 async def show_products_handler(callback: CallbackQuery):
     category, subcategory = CATEGORY_MAP[callback.data]
 
     async with async_session() as session:
+
         result = await session.execute(
             Product.__table__.select().where(
-                (Product.category == category) & (Product.subcategory == subcategory)
+                Product.category.ilike(f"%{category}%")
             )
         )
-        products = result.fetchall()
+        products = [row._mapping for row in result.fetchall()]
 
     if not products:
         await callback.message.edit_text(
@@ -101,13 +118,13 @@ async def show_products_handler(callback: CallbackQuery):
             "Но не переживайте! Наш ассортимент постоянно пополняется новыми моделями.\n"
             "Рекомендуем периодически возвращаться и смотреть обновления 😊",
             parse_mode="HTML",
-            reply_markup=None
         )
         await callback.answer()
         return
 
-    
-    product = products[0]._mapping
+
+    product = products[0]
+
     async with async_session() as session:
         photos_result = await session.execute(
             ProductPhoto.__table__.select().where(ProductPhoto.product_id == product["id"])
@@ -119,15 +136,15 @@ async def show_products_handler(callback: CallbackQuery):
         f"{product['description']}\n\n"
         f"🌍 {product['country']}\n"
         f"📏 {product['size']}\n"
-        f"💰 {product['price']}"
+        f"💰 {product['price']} ₽"
     )
 
-    kb = product_actions_kb(product["id"])  
+    kb = product_actions_kb(product["id"])
 
     if photos:
         media = InputMediaPhoto(media=photos[0], caption=caption, parse_mode="HTML")
         await callback.message.edit_media(media=media, reply_markup=kb)
     else:
-        await callback.message.edit_text(caption, reply_markup=kb, parse_mode="HTML")
+        await callback.message.edit_text(caption, parse_mode="HTML", reply_markup=kb)
 
     await callback.answer()

@@ -3,7 +3,7 @@ from aiogram import Bot, Dispatcher
 from config import BOT_TOKEN
 from handlers import start, catalog, order
 from database.db import init_db
-from handlers.admin import add_product, view_orders, manage_products
+from handlers.admin import add_product, view_orders, manage_products, admin_menu
 import logging
 
 
@@ -18,6 +18,7 @@ async def main():
     dp.include_router(add_product.router)
     dp.include_router(view_orders.router)
     dp.include_router(manage_products.router)
+    dp.include_router(admin_menu.router)
     
     await init_db()
 
