@@ -7,7 +7,6 @@ class Base(AsyncAttrs, DeclarativeBase):
     pass
 
 
-
 class Product(Base):
     __tablename__ = "products"
 

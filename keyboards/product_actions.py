@@ -1,5 +1,6 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from config import SUPPORT_USERNAME
+
 def product_actions_kb(product_id: int):
     kb = [
         [InlineKeyboardButton(text="💬 Задать вопрос", url=f"https://t.me/{SUPPORT_USERNAME}",callback_data=f"ask_{product_id}")],

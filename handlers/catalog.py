@@ -48,25 +48,33 @@ async def show_tables_chairs(callback: CallbackQuery):
 @router.callback_query(F.data == "back_main")
 async def back_to_main(callback: CallbackQuery):
     try:
-        if callback.message.text:
+        # Если есть текст в сообщении — редактируем
+        if getattr(callback.message, "text", None):
             await callback.message.edit_text(
                 "🏠 Главное меню:",
                 reply_markup=main_menu_kb()
             )
         else:
-            await callback.message.delete()
+            # Если это медиа (фото) — удаляем и отправляем новое сообщение с меню
+            try:
+                await callback.message.delete()
+            except Exception:
+                pass
             await callback.message.answer(
                 "🏠 Главное меню:",
                 reply_markup=main_menu_kb()
             )
     except Exception as e:
+        # fallback — отправляем новое сообщение и логируем ошибку
         await callback.message.answer(
             "🏠 Главное меню:",
             reply_markup=main_menu_kb()
         )
-        print(f"⚠️ Ошибка при возврате в главное меню: {e}")
+        print("⚠️ Ошибка при возврате в главное меню:", e)
 
     await callback.answer()
+
+
 @router.callback_query(F.data == "cat_about")
 async def show_about(callback: CallbackQuery):
     await callback.message.edit_text(
